@@ -91,6 +91,10 @@ const isKanban = inject(IsKanbanInj, ref(false))
 
 provide(MetaInj, meta)
 
+// override cell event hook to avoid unexpected behavior at form fields
+// issue happens when opening expanded form from cell (LTAR/Links)
+provide(CanvasSelectCellInj, undefined)
+
 const isLoading = ref(true)
 
 const isSaving = ref(false)
@@ -221,8 +225,22 @@ const hiddenFields = computed(() => {
   }
 })
 
-reloadViewDataTrigger.on(async () => {
-  await _loadRow(rowId.value, false, true)
+reloadViewDataTrigger.on(async (params) => {
+  const isSameRecordUpdated =
+    params?.relatedTableMetaId && params?.rowId && params?.relatedTableMetaId === meta.value?.id && params?.rowId === rowId.value
+
+  // If relatedTableMetaId & rowId is present that means some nested record is updated
+
+  // If same nested record udpated then udpate whole row
+  if (isSameRecordUpdated) {
+    await _loadRow(rowId.value)
+  } else if (params?.relatedTableMetaId && params?.rowId) {
+    // If it is not same record updated but it has relatedTableMetaId & rowId then update only virtual columns
+    await _loadRow(rowId.value, true)
+  } else {
+    // Else update only new/duplicated/renamed columns
+    await _loadRow(rowId.value, false, true)
+  }
 })
 
 const duplicatingRowInProgress = ref(false)
@@ -663,6 +681,12 @@ const modalProps = computed(() => {
   return {}
 })
 
+// check if the row is new and has some changes on LTAR/Links
+// this is to enable save if there are changes on LTAR/Links
+const isLTARChanged = computed(() => {
+  return isNew.value && row.value?.rowMeta?.ltarState && Object.keys(row.value?.rowMeta?.ltarState).length > 0
+})
+
 watch(
   () => comments.value.length,
   (commentCount) => {
@@ -710,9 +734,9 @@ export default {
       <div
         class="flex gap-2 min-h-7 flex-shrink-0 w-full items-center nc-expanded-form-header p-4 xs:(px-2 py-0 min-h-[48px]) border-b-1 border-gray-200"
       >
-        <div class="flex gap-2">
+        <div class="flex gap-2 min-w-0 min-h-8">
           <div class="flex gap-2">
-            <NcTooltip v-if="props.showNextPrevIcons">
+            <NcTooltip v-if="props.showNextPrevIcons" class="flex items-center">
               <template #title> {{ renderAltOrOptlKey() }} + ←</template>
               <NcButton
                 :disabled="isFirstRow || isLoading"
@@ -724,7 +748,7 @@ export default {
                 <GeneralIcon icon="chevronDown" class="transform rotate-180" />
               </NcButton>
             </NcTooltip>
-            <NcTooltip v-if="props.showNextPrevIcons">
+            <NcTooltip v-if="props.showNextPrevIcons" class="flex items-center">
               <template #title> {{ renderAltOrOptlKey() }} + →</template>
               <NcButton
                 :disabled="islastRow || isLoading"
@@ -740,7 +764,7 @@ export default {
           <div v-if="isLoading" class="flex items-center">
             <a-skeleton-input active class="!h-6 !sm:mr-14 !w-52 !rounded-md !overflow-hidden" size="small" />
           </div>
-          <div v-else class="flex-1 flex items-center gap-2 xs:(flex-row-reverse justify-end)">
+          <div v-else class="flex-1 flex items-center gap-2 xs:(flex-row-reverse justify-end) min-w-0">
             <div v-if="!props.showNextPrevIcons" class="hidden md:flex items-center rounded-lg bg-gray-100 px-2 py-1 gap-2">
               <GeneralIcon icon="table" class="text-gray-700" />
               <span class="nc-expanded-form-table-name">
@@ -757,8 +781,14 @@ export default {
               v-else-if="displayValue && !row?.rowMeta?.new"
               class="flex items-center font-bold text-gray-800 text-2xl overflow-hidden"
             >
-              <span class="truncate w-[120px] md:w-[300px]">
-                <LazySmartsheetPlainCell v-model="displayValue" :column="displayField" />
+              <span class="min-w-[120px] md:min-w-[300px]">
+                <NcTooltip class="truncate" show-on-truncate-only>
+                  <template #title>
+                    {{ displayValue }}
+                  </template>
+
+                  <LazySmartsheetPlainCell v-model="displayValue" :column="displayField" />
+                </NcTooltip>
               </span>
             </div>
           </div>
@@ -796,7 +826,7 @@ export default {
             <template #title> {{ renderAltOrOptlKey() }} + S</template>
             <NcButton
               v-e="['c:row-expand:save']"
-              :disabled="changedColumns.size === 0 && !isUnsavedFormExist"
+              :disabled="changedColumns.size === 0 && !isUnsavedFormExist && !isLTARChanged"
               :loading="isSaving"
               class="nc-expand-form-save-btn !xs:(text-base) !h-7 !px-2"
               data-testid="nc-expanded-form-save"

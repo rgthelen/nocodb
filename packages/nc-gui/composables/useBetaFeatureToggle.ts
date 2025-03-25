@@ -53,10 +53,9 @@ const FEATURES = [
   },
   {
     id: 'import_from_nocodb',
-    title: 'Import from NocoDB',
-    description: 'Enable import from NocoDB.',
-    enabled: false,
-    isEngineering: true,
+    title: 'OSS to Enterprise migration',
+    description: 'Enable import from NocoDB OSS instance to Enterprise Edition.',
+    enabled: true,
     isEE: true,
   },
   {

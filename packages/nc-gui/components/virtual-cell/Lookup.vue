@@ -6,8 +6,6 @@ const { metas, getMeta } = useMetas()
 
 const column = inject(ColumnInj, ref())
 
-const meta = inject(MetaInj, ref())
-
 const cellValue = inject(CellValueInj, ref())
 
 const isGroupByLabel = inject(IsGroupByLabelInj, ref(false))
@@ -40,12 +38,22 @@ const rowHeight = inject(RowHeightInj, ref(1) as any)
 
 provide(RowHeightInj, providedHeightRef)
 
-const relationColumn = computed(() =>
-  meta.value?.id
-    ? metas.value[meta.value?.id]?.columns?.find(
-        (c: ColumnType) => c.id === (column.value?.colOptions as LookupType)?.fk_relation_column_id,
-      )
-    : undefined,
+const relationColumn = computed(() => {
+  if (column.value?.fk_model_id) {
+    return metas.value[column.value.fk_model_id]?.columns?.find(
+      (c: ColumnType) => c.id === (column.value?.colOptions as LookupType)?.fk_relation_column_id,
+    )
+  }
+  return undefined
+})
+
+watch(
+  column,
+  async (newColumn) => {
+    if (!newColumn?.fk_model_id || metas.value[newColumn?.fk_model_id]) return
+    await getMeta(newColumn.fk_model_id)
+  },
+  { immediate: true },
 )
 
 watch(

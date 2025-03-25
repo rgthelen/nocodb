@@ -1,4 +1,10 @@
-import { ButtonActionsType, ColumnReqType, ColumnType, TableType } from './Api';
+import {
+  ButtonActionsType,
+  ColumnReqType,
+  ColumnType,
+  LinkToAnotherRecordType,
+  TableType,
+} from './Api';
 import { FormulaDataTypes } from './formulaHelpers';
 import { LongTextAiMetaProp, RelationTypes } from '~/lib/globals';
 import { parseProp } from './helperFunctions';
@@ -315,6 +321,18 @@ export function isLinksOrLTAR(
   );
 }
 
+export function isSelfLinkCol(
+  col: ColumnType & { colOptions: unknown }
+): boolean {
+  return (
+    isLinksOrLTAR(col) &&
+    col.system &&
+    // except has-many all other relation types are self link
+    // has-many system column get created to mm table only
+    (col.colOptions as LinkToAnotherRecordType)?.type !== RelationTypes.HAS_MANY
+  );
+}
+
 export const getEquivalentUIType = ({
   formulaColumn,
 }: {
@@ -562,4 +580,33 @@ export const isReadOnlyColumn = (column: ColumnType): boolean => {
     // if primary key and auto generated then treat as readonly
     (column.pk && (column.ai || parseProp(column.meta)?.ag))
   );
+};
+
+/**
+ * Determines whether a given column type represents a Date or DateTime field.
+ *
+ * @param column - The column type to check.
+ * @returns `true` if the column is a Date, DateTime, CreatedTime, or LastModifiedTime field;
+ *          `true` if it is a Formula column that evaluates to DateTime;
+ *          otherwise, `false`.
+ */
+export const isDateOrDateTimeCol = (column: ColumnType) => {
+  // Check if the column's UI type is one of the predefined date-related types
+  if (
+    [
+      UITypes.Date,
+      UITypes.DateTime,
+      UITypes.CreatedTime,
+      UITypes.LastModifiedTime,
+    ].includes(column.uidt as UITypes)
+  ) {
+    return true;
+  }
+
+  // If the column is a Formula, determine if its evaluated type is DateTime
+  if (column.uidt === UITypes.Formula) {
+    return getEquivalentUIType({ formulaColumn: column }) === UITypes.DateTime;
+  }
+
+  return false;
 };

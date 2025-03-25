@@ -16,8 +16,8 @@ import { hasAncestorWithClass, isGeneralOverlayActive } from '../../../../utils/
 import { useCanvasTable } from './composables/useCanvasTable'
 import Aggregation from './context/Aggregation.vue'
 import { clearTextCache, defaultOffscreen2DContext, isBoxHovered } from './utils/canvas'
-import Tooltip from './Tooltip.vue'
-import Scroller from './Scroller.vue'
+import Tooltip from './components/Tooltip.vue'
+import Scroller from './components/Scroller.vue'
 import { columnTypeName } from './utils/headerUtils'
 import { MouseClickType, NO_EDITABLE_CELL, getMouseClickType, parseCellWidth } from './utils/cell'
 import { ADD_NEW_COLUMN_WIDTH, COLUMN_HEADER_HEIGHT_IN_PX, MAX_SELECTED_ROWS, ROW_META_COLUMN_WIDTH } from './utils/constants'
@@ -64,6 +64,7 @@ const props = defineProps<{
   chunkStates: Array<'loading' | 'loaded' | undefined>
   isBulkOperationInProgress: boolean
   selectedAllRecords?: boolean
+  getRows: (start: number, end: number) => Promise<Row[]>
 }>()
 
 const emits = defineEmits(['bulkUpdateDlg', 'update:selectedAllRecords'])
@@ -86,6 +87,7 @@ const {
   applySorting,
   bulkDeleteAll,
   removeRowIfNew,
+  getRows,
 } = props
 
 // VModels
@@ -278,6 +280,7 @@ const {
   onActiveCellChanged,
   addNewColumn: addEmptyColumn,
   setCursor,
+  getRows,
 })
 
 const activeCursor = ref<CursorType>('auto')
@@ -652,6 +655,11 @@ async function handleMouseDown(e: MouseEvent) {
         }
       })
     } else {
+      if (isContextMenuAllowed.value && vSelectedAllRecords.value) {
+        // Set the context Menu Targer and return
+        contextMenuTarget.value = { row: 0, col: -1 }
+        requestAnimationFrame(triggerRefreshCanvas)
+      }
       return
     }
     // DO NOT TRIGGER ANY OTHER MOUSE_DOWN ACTION IF USER IS CLICKING ON COLUMN HEADER
@@ -713,7 +721,7 @@ async function handleMouseDown(e: MouseEvent) {
     }
 
     if (isContextMenuAllowed.value) {
-      // Set the context Menu Targer and return
+      // Set the context Menu Target and return
       contextMenuTarget.value = { row: rowIndex, col: columnIndex }
       requestAnimationFrame(triggerRefreshCanvas)
     }
@@ -1828,6 +1836,7 @@ defineExpose({
               :call-add-new-row="callAddNewRow"
               :copy-value="copyValue"
               :read-only="!hasEditPermission"
+              :get-rows="getRows"
               :bulk-update-rows="bulkUpdateRows"
               :expand-form="expandForm"
               :selected-rows="selectedRows"
@@ -2029,7 +2038,7 @@ defineExpose({
       }
     }
 
-    :deep(.nc-cell-datetime) {
+    :deep(.nc-cell-datetime:not(.nc-under-ltar)) {
       @apply !py-0.75 !px-1.5;
     }
 
@@ -2110,13 +2119,13 @@ defineExpose({
     @apply !py-1;
   }
 
-  :deep(.nc-cell-datetime) {
+  :deep(.nc-cell-datetime:not(.nc-under-ltar)) {
     @apply !py-1 !px-2;
   }
 
-  :deep(.nc-cell-date),
-  :deep(.nc-cell-year),
-  :deep(.nc-cell-time) {
+  :deep(.nc-cell-date:not(.nc-under-ltar)),
+  :deep(.nc-cell-year:not(.nc-under-ltar)),
+  :deep(.nc-cell-time:not(.nc-under-ltar)) {
     @apply !h-auto !py-1;
   }
 
@@ -2143,6 +2152,14 @@ defineExpose({
         @apply !text-small leading-[18px];
       }
     }
+  }
+
+  :deep(.nc-cell-datetime.nc-under-ltar) {
+    @apply !py-0 !leading-[16px];
+  }
+
+  :deep(.nc-under-ltar .nc-cell-field div) {
+    @apply !leading-[16px];
   }
 }
 </style>

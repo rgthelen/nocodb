@@ -19,7 +19,7 @@ export function _wherePk(
   id: unknown | unknown[],
   skipPkValidation = false,
 ) {
-  const where = {};
+  const where: Record<string, unknown> = {};
 
   // if id object is provided use as it is
   if (id && typeof id === 'object' && !Array.isArray(id)) {
@@ -146,13 +146,34 @@ export async function getBaseModelSqlFromModelId({
   });
 }
 
-// Audit logging is enabled by default unless explicitly disabled.
-// It remains enabled in the following cases:
-// 1. `NC_ENABLE_AUDIT` is set to 'true' (manual override).
-// 2. Running in a test environment (`NODE_ENV === 'test'`).
+// Audit logging is enabled by default unless explicitly disabled using NC_DISABLE_AUDIT=true
 export function isDataAuditEnabled() {
-  return (
-    process.env.NC_DISABLE_AUDIT !== 'true' &&
-    (process.env.NC_ENABLE_AUDIT === 'true' || process.env.NODE_ENV === 'test')
-  );
+  return process.env.NC_DISABLE_AUDIT !== 'true';
+}
+
+export function getRelatedLinksColumn(
+  column: Column<LinkToAnotherRecordColumn>,
+  relatedModel: Model,
+) {
+  return relatedModel.columns.find((c: Column) => {
+    if (column.colOptions?.type === RelationTypes.MANY_TO_MANY) {
+      return (
+        column.colOptions.fk_mm_child_column_id ===
+          c.colOptions?.fk_mm_parent_column_id &&
+        column.colOptions.fk_mm_parent_column_id ===
+          c.colOptions?.fk_mm_child_column_id
+      );
+    } else {
+      return (
+        column.colOptions.fk_child_column_id ===
+          c.colOptions?.fk_child_column_id &&
+        column.colOptions.fk_parent_column_id ===
+          c.colOptions?.fk_parent_column_id
+      );
+    }
+  });
+}
+
+export function extractIdPropIfObjectOrReturn(id: any, prop: string) {
+  return typeof id === 'object' ? id[prop] : id;
 }

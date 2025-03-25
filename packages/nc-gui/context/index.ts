@@ -32,7 +32,14 @@ export const RowHeightInj: InjectionKey<Ref<1 | 2 | 4 | 6 | undefined>> = Symbol
 export const ScrollParentInj: InjectionKey<Ref<HTMLElement | undefined>> = Symbol('scroll-parent-injection')
 /** when shouldShowLoading bool is passed, it indicates if a loading spinner should be visible while reloading */
 export const ReloadViewDataHookInj: InjectionKey<
-  EventHook<{ shouldShowLoading?: boolean; offset?: number; isFormFieldFilters?: boolean } | void>
+  EventHook<{
+    shouldShowLoading?: boolean
+    offset?: number
+    isFormFieldFilters?: boolean
+    isFromLinkRecord?: boolean
+    relatedTableMetaId?: string
+    rowId?: string
+  } | void>
 > = Symbol('reload-view-data-injection')
 export const ReloadViewMetaHookInj: InjectionKey<EventHook<boolean | void>> = Symbol('reload-view-meta-injection')
 export const ReloadVisibleDataHookInj: InjectionKey<EventHook<void>> = Symbol('reload-visible-data-injection')
@@ -62,7 +69,8 @@ export const OnDivDataCellEventHookInj: InjectionKey<EventHook<Event> | undefine
 export const SaveRowInj: InjectionKey<(() => void) | undefined> = Symbol('save-row-injection')
 export const CurrentCellInj: InjectionKey<Ref<Element | undefined>> = Symbol('current-cell-injection')
 export const IsUnderLookupInj: InjectionKey<Ref<boolean>> = Symbol('is-under-lookup-injection')
-export const IsUnderFormulaInj: InjectionKey<Ref<boolean>> = Symbol('is-under-formula-injection')
+export const IsUnderFormulaInj: InjectionKey<Ref<boolean>> = Symbol('is-under-ltar-injection')
+export const IsUnderLTARInj: InjectionKey<Ref<boolean>> = Symbol('is-under-lookup-injection')
 export const DocsLocalPageInj: InjectionKey<Ref<PageSidebarNode | undefined>> = Symbol('docs-local-page-injection')
 export const ProjectRoleInj: InjectionKey<Ref<string | string[]>> = Symbol('base-roles-injection')
 export const ProjectStarredModeInj: InjectionKey<Ref<boolean>> = Symbol('base-starred-injection')

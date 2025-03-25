@@ -14,15 +14,19 @@ import type { BaseUser, Column, Model, User } from '~/models';
 
 export interface FormulaBaseParams {
   baseModelSqlv2: BaseModelSqlv2;
-  alias?: string;
   tableAlias?: string;
   baseUsers?: (Partial<User> & BaseUser)[];
 }
 
+export type TAliasToClumn = Record<
+  string,
+  (parentColumns?: Set<string>) => Promise<{ builder: any }>
+>;
+
 export interface FormulaQueryBuilderBaseParams extends FormulaBaseParams {
   _tree;
   model: Model;
-  aliasToColumn?: Record<string, () => Promise<{ builder: any }>>;
+  aliasToColumn?: TAliasToClumn;
   parsedTree?: ParsedFormulaNode;
   column?: Column;
   parentColumns: Set<string>;

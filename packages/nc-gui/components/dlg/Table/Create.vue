@@ -780,9 +780,9 @@ const handleRefreshOnError = () => {
           </NcButton>
           <div v-else></div>
           <div class="flex gap-2 items-center">
-            <NcButton type="secondary" size="small" :disabled="creating || isAiSaving" @click="dialogShow = false">{{
-              $t('general.cancel')
-            }}</NcButton>
+            <NcButton type="secondary" size="small" :disabled="creating || isAiSaving" @click="dialogShow = false">
+              {{ $t('general.cancel') }}
+            </NcButton>
 
             <NcButton
               v-if="!aiMode"
