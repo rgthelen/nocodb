@@ -2,6 +2,7 @@ import path from 'path';
 import { NestFactory } from '@nestjs/core';
 import clear from 'clear';
 import * as express from 'express';
+import session from 'express-session';
 import { v4 as uuidv4 } from 'uuid';
 import dotenv from 'dotenv';
 import { IoAdapter } from '@nestjs/platform-socket.io';
@@ -129,17 +130,27 @@ export default class Noco {
       process.env.NC_DISABLE_TELE = 'true';
     }
 
+    nestApp.use(requestIp.mw());
+    nestApp.use(cookieParser());
+
+    // Add session middleware for OIDC
+    nestApp.use(
+      session({
+        secret: process.env.NC_AUTH_JWT_SECRET || 'secret-key',
+        resave: false,
+        saveUninitialized: false,
+        cookie: {
+          secure: process.env.NODE_ENV === 'production',
+          maxAge: 24 * 60 * 60 * 1000 // 24 hours
+        }
+      })
+    );
+
     nestApp.useWebSocketAdapter(new IoAdapter(httpServer));
     NcDebug.log('Websocket adapter initialized');
 
     this._httpServer = nestApp.getHttpAdapter().getInstance();
     this._server = server;
-
-    nestApp.use(requestIp.mw());
-    nestApp.use(cookieParser());
-
-    nestApp.useWebSocketAdapter(new IoAdapter(httpServer));
-    NcDebug.log('Websocket adapter initialized');
 
     nestApp.use(
       express.json({ limit: process.env.NC_REQUEST_BODY_SIZE || '50mb' }),

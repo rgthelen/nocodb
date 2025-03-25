@@ -50,6 +50,10 @@ module.exports = {
         tsConfig: {
             configFile: path.resolve('tsconfig.json'),
         },
+        alias: {
+            'nc-gui': path.resolve(__dirname, '../../nc-gui'),
+            '~': path.resolve(__dirname, '../src'),
+        },
     },
     output: {
         path: path.resolve('./docker'),
@@ -76,7 +80,7 @@ module.exports = {
     },
     externals: [
         nodeExternals({
-            allowlist: ['nocodb-sdk'],
+            allowlist: ['nocodb-sdk', 'nc-gui'],
         }),
     ],
     plugins: [
