@@ -19,6 +19,8 @@ app/tests/coverage/
 .bower-*/
 .idea/
 coverage/
+*.toml
+*.fly
 
 # MEAN.js app and assets
 # ======================
