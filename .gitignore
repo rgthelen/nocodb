@@ -103,3 +103,7 @@ httpbin
 
 # nix
 result
+
+# Fly.io files
+fly.toml
+Dockerfile.fly
